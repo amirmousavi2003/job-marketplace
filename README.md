@@ -10,7 +10,8 @@ Architecture and decisions: `docs/phase1-architecture-blueprint.md`.
 | 1. Blueprint | done |
 | 2. Foundation (settings, custom User, Docker, tests) | done |
 | 3. Auth, profiles, companies | done (see `docs/phase3-api-auth-profiles-companies.md`) |
-| 4. Resume and skills taxonomy | next |
+| 4. Resume, skills taxonomy, locations | done (see `docs/phase4-api-resume-taxonomy.md`) |
+| 5. Job marketplace (posts, search, moderation) | next |
 
 ## Run with Docker
 
@@ -39,6 +40,15 @@ cp .env.example .env        # set POSTGRES_HOST=localhost
 python manage.py migrate
 python manage.py runserver
 ```
+
+## Demo catalogue
+
+```bash
+docker compose exec web python manage.py seed_demo_catalogue
+```
+
+Needs PostgreSQL with the `pg_trgm` extension (included in the official image; the DB user
+must be allowed to create extensions, which the Docker setup allows).
 
 ## Tests and lint
 

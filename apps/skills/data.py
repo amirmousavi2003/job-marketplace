@@ -1,0 +1,60 @@
+"""Seed data. Top-level categories ship with the product; skills and titles are demo-only."""
+
+CATEGORIES = [
+    ("فناوری اطلاعات و نرم‌افزار", "Information Technology", "it"),
+    ("طراحی و هنر", "Design & Arts", "design"),
+    ("بازاریابی و فروش", "Marketing & Sales", "marketing-sales"),
+    ("مالی و حسابداری", "Finance & Accounting", "finance"),
+    ("منابع انسانی و اداری", "HR & Administration", "hr-admin"),
+    ("آموزش و پژوهش", "Education & Research", "education"),
+    ("پزشکی و سلامت", "Healthcare", "healthcare"),
+    ("مهندسی", "Engineering", "engineering"),
+    ("ساختمان و عمران", "Construction", "construction"),
+    ("تولید و صنعت", "Manufacturing", "manufacturing"),
+    ("خودرو و تعمیرات", "Automotive & Repair", "automotive"),
+    ("حمل‌ونقل و لجستیک", "Transport & Logistics", "logistics"),
+    ("گردشگری و رستوران‌داری", "Hospitality & Tourism", "hospitality"),
+    ("حقوقی و مشاوره", "Legal & Consulting", "legal"),
+    ("خدمات و پشتیبانی مشتری", "Customer Service", "customer-service"),
+    ("کشاورزی و محیط زیست", "Agriculture & Environment", "agriculture"),
+    ("سایر", "Other", "other"),
+]
+
+# (name_fa, name_en, [aliases])
+DEMO_SKILLS = [
+    ("فتوشاپ", "Photoshop", ["Adobe Photoshop", "PS"]),
+    ("ایلوستریتور", "Illustrator", ["Adobe Illustrator"]),
+    ("پایتون", "Python", []),
+    ("جنگو", "Django", []),
+    ("جاوااسکریپت", "JavaScript", ["JS"]),
+    ("ری‌اکت", "React", ["ReactJS", "React.js", "ریکت"]),
+    ("اس‌کیوال", "SQL", ["پایگاه داده رابطه‌ای"]),
+    ("اکسل", "Excel", ["Microsoft Excel"]),
+    ("حسابداری", "Accounting", []),
+    ("تعمیر ایسیو", "ECU repair", ["ECU", "تعمیرات ECU"]),
+    ("اتوکد", "AutoCAD", ["Auto CAD"]),
+    ("زبان انگلیسی", "English", []),
+    ("نرم‌افزار همکاران سیستم", "Hamkaran System", ["همکاران سیستم"]),
+    ("سئو", "SEO", ["بهینه‌سازی موتور جستجو"]),
+    ("مدیریت پروژه", "Project Management", ["PM"]),
+    ("تایپ سریع", "Fast typing", []),
+    ("جوشکاری", "Welding", []),
+    ("برق ساختمان", "Building electrical work", []),
+    ("طراحی لوگو", "Logo design", []),
+    ("مذاکره و فروش", "Sales negotiation", []),
+]
+
+DEMO_JOB_TITLES = [
+    ("توسعه‌دهنده فرانت‌اند", "Frontend Developer", ["برنامه‌نویس فرانت", "Front-end Developer"]),
+    ("توسعه‌دهنده بک‌اند", "Backend Developer", ["برنامه‌نویس بک‌اند", "Back-end Developer"]),
+    ("طراح گرافیک", "Graphic Designer", []),
+    ("طراح رابط و تجربه کاربری", "UI/UX Designer", ["طراح UI/UX"]),
+    ("حسابدار", "Accountant", []),
+    ("کارشناس فروش", "Sales Specialist", ["کارشناس فروش و بازاریابی"]),
+    ("مدیر پروژه", "Project Manager", []),
+    ("تحلیلگر داده", "Data Analyst", []),
+    ("مکانیک خودرو", "Auto Mechanic", ["تعمیرکار خودرو"]),
+    ("برقکار ساختمان", "Electrician", []),
+    ("معلم", "Teacher", ["مدرس"]),
+    ("پرستار", "Nurse", []),
+]

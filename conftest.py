@@ -56,3 +56,34 @@ def make_seeker(make_user):
         return user
 
     return _make
+
+
+@pytest.fixture
+def make_resume(make_seeker):
+    from apps.resumes.models import Resume
+
+    def _make(user=None, **fields):
+        user = user or make_seeker()
+        return user, Resume.objects.create(job_seeker=user.job_seeker_profile, **fields)
+
+    return _make
+
+
+@pytest.fixture
+def make_skill(db):
+    from apps.skills import services
+
+    def _make(name_en="Photoshop", name_fa="", **kw):
+        return services.create_entry(services.SKILL, name_fa=name_fa, name_en=name_en, **kw)
+
+    return _make
+
+
+@pytest.fixture
+def make_title(db):
+    from apps.skills import services
+
+    def _make(name_en="Frontend Developer", name_fa="", **kw):
+        return services.create_entry(services.JOB_TITLE, name_fa=name_fa, name_en=name_en, **kw)
+
+    return _make
