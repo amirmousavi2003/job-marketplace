@@ -1,0 +1,62 @@
+# Job Marketplace Backend
+
+Django + DRF + PostgreSQL backend for an Iranian employment and freelance project marketplace.
+Architecture and decisions: `docs/phase1-architecture-blueprint.md`.
+
+## Status
+
+| Phase | Status |
+|---|---|
+| 1. Blueprint | done |
+| 2. Foundation (settings, custom User, Docker, tests) | done |
+| 3. Auth and profiles | next |
+
+## Run with Docker
+
+```bash
+cp .env.example .env        # then edit POSTGRES_PASSWORD and DJANGO_SECRET_KEY
+docker compose up --build
+```
+
+- API health: http://localhost:8000/api/v1/health/
+- Swagger UI: http://localhost:8000/api/docs/
+- Admin: http://localhost:8000/admin/ (create a superuser first)
+
+```bash
+docker compose exec web python manage.py createsuperuser
+docker compose exec web pytest
+```
+
+## Run without Docker
+
+Needs Python 3.12+ and a PostgreSQL server.
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements/dev.txt
+cp .env.example .env        # set POSTGRES_HOST=localhost
+python manage.py migrate
+python manage.py runserver
+```
+
+## Tests and lint
+
+```bash
+pytest
+ruff check . && ruff format --check .
+```
+
+Tests use `config.settings.test` and need PostgreSQL (the DB user must be able to create a test database).
+
+## Settings
+
+- `config/settings/base.py`: shared. Secrets only from environment variables.
+- `dev.py`, `test.py`, `prod.py`: per environment. `prod.py` enables HTTPS-only cookies, HSTS and SSL redirect.
+- `manage.py` defaults to `dev`; `wsgi.py` / `asgi.py` default to `prod`.
+
+## Conventions
+
+- Error format for every API error: `{"error": {"code", "message", "details"}}`.
+- Pagination: `?page=&page_size=` (max 50) returns `{count, next, previous, results}`.
+- Emails are stored lowercase; login identifier is the email.
+- Money is stored as integers (Rial). Dates are ISO 8601 Gregorian; the frontend converts to Jalali.
