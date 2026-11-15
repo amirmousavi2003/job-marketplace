@@ -1,5 +1,6 @@
 from django.db import connection
-from rest_framework import status
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,6 +13,12 @@ class HealthView(APIView):
     authentication_classes: list = []
     throttle_classes: list = []
 
+    @extend_schema(
+        responses={
+            200: inline_serializer("HealthOk", {"status": serializers.CharField()}),
+            503: OpenApiResponse(description="Database unavailable"),
+        }
+    )
     def get(self, request):
         try:
             with connection.cursor() as cursor:

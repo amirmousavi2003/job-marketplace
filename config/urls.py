@@ -4,6 +4,10 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 api_v1 = [
     path("", include("apps.common.urls")),
+    path("auth/", include("apps.accounts.auth_urls")),
+    path("accounts/", include("apps.accounts.urls")),
+    path("profiles/", include("apps.profiles.urls")),
+    path("companies/", include("apps.companies.urls")),
 ]
 
 urlpatterns = [

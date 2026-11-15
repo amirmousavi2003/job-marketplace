@@ -9,7 +9,8 @@ Architecture and decisions: `docs/phase1-architecture-blueprint.md`.
 |---|---|
 | 1. Blueprint | done |
 | 2. Foundation (settings, custom User, Docker, tests) | done |
-| 3. Auth and profiles | next |
+| 3. Auth, profiles, companies | done (see `docs/phase3-api-auth-profiles-companies.md`) |
+| 4. Resume and skills taxonomy | next |
 
 ## Run with Docker
 
@@ -58,5 +59,7 @@ Tests use `config.settings.test` and need PostgreSQL (the DB user must be able t
 
 - Error format for every API error: `{"error": {"code", "message", "details"}}`.
 - Pagination: `?page=&page_size=` (max 50) returns `{count, next, previous, results}`.
+- Dev runs Celery tasks inline (`CELERY_TASK_ALWAYS_EAGER=True` in `dev.py`), so password-reset emails
+  are printed in the web container log. Production needs a real worker and SMTP.
 - Emails are stored lowercase; login identifier is the email.
 - Money is stored as integers (Rial). Dates are ISO 8601 Gregorian; the frontend converts to Jalali.

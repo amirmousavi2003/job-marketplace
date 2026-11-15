@@ -7,6 +7,15 @@ from rest_framework import exceptions as drf_exceptions
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
+
+class Conflict(drf_exceptions.APIException):
+    """HTTP 409: the request is valid but conflicts with current state."""
+
+    status_code = 409
+    default_detail = "Conflict with the current state of the resource."
+    default_code = "conflict"
+
+
 _CODES = {
     drf_exceptions.ValidationError: "validation_error",
     drf_exceptions.AuthenticationFailed: "authentication_failed",
