@@ -125,7 +125,7 @@ class _AdminSuggestionActionView(GenericAPIView):
 
 
 class _ApproveView(_AdminSuggestionActionView):
-    serializer_class = sz.ApproveSerializer
+    serializer_class = sz.SuggestionApproveSerializer
 
     def post(self, request, pk):
         suggestion = self.get_suggestion(pk)
@@ -151,7 +151,7 @@ class _ApproveView(_AdminSuggestionActionView):
 
 
 class _RejectView(_AdminSuggestionActionView):
-    serializer_class = sz.RejectSerializer
+    serializer_class = sz.SuggestionRejectSerializer
 
     def post(self, request, pk):
         suggestion = self.get_suggestion(pk)

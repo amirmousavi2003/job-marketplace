@@ -11,7 +11,8 @@ Architecture and decisions: `docs/phase1-architecture-blueprint.md`.
 | 2. Foundation (settings, custom User, Docker, tests) | done |
 | 3. Auth, profiles, companies | done (see `docs/phase3-api-auth-profiles-companies.md`) |
 | 4. Resume, skills taxonomy, locations | done (see `docs/phase4-api-resume-taxonomy.md`) |
-| 5. Job marketplace (posts, search, moderation) | next |
+| 5. Job marketplace (posts, search, moderation) | done (see `docs/phase5-api-jobs-moderation.md`) |
+| 6. Applications and project proposals | next |
 
 ## Run with Docker
 
@@ -49,6 +50,11 @@ docker compose exec web python manage.py seed_demo_catalogue
 
 Needs PostgreSQL with the `pg_trgm` extension (included in the official image; the DB user
 must be allowed to create extensions, which the Docker setup allows).
+
+## Expired posts
+
+Schedule `python manage.py expire_jobs` daily (cron or Celery beat). Expired posts are hidden from
+search immediately even without it; the command only updates their stored status.
 
 ## Tests and lint
 

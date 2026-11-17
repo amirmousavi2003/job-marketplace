@@ -38,6 +38,8 @@ LOCAL_APPS = [
     "apps.locations",
     "apps.skills",
     "apps.resumes",
+    "apps.jobs",
+    "apps.moderation",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -143,6 +145,7 @@ REST_FRAMEWORK = {
         "auth_register": "5/min",
         "auth_password_reset": "5/hour",
         "suggestions": "20/hour",
+        "job_create": "30/hour",
     },
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
 }
@@ -161,6 +164,21 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    # Stable, readable names for enums in the generated schema / frontend clients.
+    "ENUM_NAME_OVERRIDES": {
+        "ExperienceLevelEnum": "apps.common.choices.ExperienceLevel.choices",
+        "WorkModeEnum": "apps.common.choices.WorkMode.choices",
+        "DegreeLevelEnum": "apps.common.choices.DegreeLevel.choices",
+        "SkillLevelEnum": "apps.common.choices.SkillLevel.choices",
+        "PostTypeEnum": "apps.jobs.models.PostType.choices",
+        "ModerationStatusEnum": "apps.jobs.models.ModerationStatus.choices",
+        "LifecycleStatusEnum": "apps.jobs.models.LifecycleStatus.choices",
+        "EmploymentTypeEnum": "apps.jobs.models.EmploymentType.choices",
+        "CurrencyEnum": "apps.jobs.models.Currency.choices",
+        "SuggestionStatusEnum": "apps.skills.models.SuggestionStatus.choices",
+        "EmploymentStatusEnum": "apps.resumes.models.EmploymentStatus.choices",
+        "LanguageLevelEnum": "apps.resumes.models.LanguageLevel.choices",
+    },
 }
 
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL or "memory://")

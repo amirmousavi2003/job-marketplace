@@ -80,7 +80,7 @@ class AdminJobTitleSuggestionSerializer(_AdminSuggestionBase):
         model = JobTitleSuggestion
 
 
-class ApproveSerializer(serializers.Serializer):
+class SuggestionApproveSerializer(serializers.Serializer):
     """Either map to an existing entry (existing_id) or create a new one (names/aliases)."""
 
     existing_id = serializers.IntegerField(required=False)
@@ -101,5 +101,5 @@ class ApproveSerializer(serializers.Serializer):
         return attrs
 
 
-class RejectSerializer(serializers.Serializer):
+class SuggestionRejectSerializer(serializers.Serializer):
     note = serializers.CharField(min_length=3, max_length=1000)

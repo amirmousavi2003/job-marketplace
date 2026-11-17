@@ -2,7 +2,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import F, Q
 
-from apps.common.choices import ExperienceLevel, WorkMode
+from apps.common.choices import DegreeLevel, ExperienceLevel, SkillLevel, WorkMode
 from apps.common.models import TimeStampedModel
 from apps.common.text import normalize_text
 from apps.common.validators import http_url_validator
@@ -63,15 +63,6 @@ class Resume(TimeStampedModel):
         return f"Resume of {self.job_seeker}"
 
 
-class DegreeLevel(models.TextChoices):
-    BELOW_DIPLOMA = "BELOW_DIPLOMA", "Below diploma"
-    DIPLOMA = "DIPLOMA", "Diploma"
-    ASSOCIATE = "ASSOCIATE", "Associate (Kardani)"
-    BACHELOR = "BACHELOR", "Bachelor"
-    MASTER = "MASTER", "Master"
-    DOCTORATE = "DOCTORATE", "Doctorate"
-
-
 class Education(TimeStampedModel):
     resume = models.ForeignKey(Resume, on_delete=models.CASCADE, related_name="educations")
     degree = models.CharField(max_length=20, choices=DegreeLevel.choices)
@@ -107,13 +98,6 @@ class WorkExperience(TimeStampedModel):
                 name="resumes_workexperience_dates_ordered",
             )
         ]
-
-
-class SkillLevel(models.TextChoices):
-    BEGINNER = "BEGINNER", "Beginner"
-    INTERMEDIATE = "INTERMEDIATE", "Intermediate"
-    ADVANCED = "ADVANCED", "Advanced"
-    EXPERT = "EXPERT", "Expert"
 
 
 class ResumeSkill(TimeStampedModel):
