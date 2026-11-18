@@ -40,6 +40,7 @@ LOCAL_APPS = [
     "apps.resumes",
     "apps.jobs",
     "apps.moderation",
+    "apps.applications",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -146,6 +147,7 @@ REST_FRAMEWORK = {
         "auth_password_reset": "5/hour",
         "suggestions": "20/hour",
         "job_create": "30/hour",
+        "apply": "60/hour",
     },
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
 }
@@ -175,6 +177,8 @@ SPECTACULAR_SETTINGS = {
         "LifecycleStatusEnum": "apps.jobs.models.LifecycleStatus.choices",
         "EmploymentTypeEnum": "apps.jobs.models.EmploymentType.choices",
         "CurrencyEnum": "apps.jobs.models.Currency.choices",
+        "ApplicationStatusEnum": "apps.applications.models.ApplicationStatus.choices",
+        "ProposalStatusEnum": "apps.applications.models.ProposalStatus.choices",
         "SuggestionStatusEnum": "apps.skills.models.SuggestionStatus.choices",
         "EmploymentStatusEnum": "apps.resumes.models.EmploymentStatus.choices",
         "LanguageLevelEnum": "apps.resumes.models.LanguageLevel.choices",

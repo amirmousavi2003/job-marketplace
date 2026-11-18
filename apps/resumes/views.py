@@ -1,4 +1,3 @@
-from django.db.models import Prefetch
 from django.http import FileResponse
 from rest_framework import status, viewsets
 from rest_framework.exceptions import NotFound
@@ -22,19 +21,7 @@ from .models import (
     ResumeSkill,
     WorkExperience,
 )
-
-
-def resume_queryset():
-    """One resume with every section loaded in a fixed, small number of queries."""
-    return Resume.objects.select_related("job_seeker").prefetch_related(
-        Prefetch("desired_job_titles", DesiredJobTitle.objects.select_related("job_title")),
-        Prefetch("resume_skills", ResumeSkill.objects.select_related("skill")),
-        "educations",
-        "work_experiences",
-        "languages",
-        "certificates",
-        "portfolio_items",
-    )
+from .selectors import resume_queryset
 
 
 class _OwnResumeMixin:

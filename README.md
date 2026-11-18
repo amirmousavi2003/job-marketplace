@@ -12,7 +12,8 @@ Architecture and decisions: `docs/phase1-architecture-blueprint.md`.
 | 3. Auth, profiles, companies | done (see `docs/phase3-api-auth-profiles-companies.md`) |
 | 4. Resume, skills taxonomy, locations | done (see `docs/phase4-api-resume-taxonomy.md`) |
 | 5. Job marketplace (posts, search, moderation) | done (see `docs/phase5-api-jobs-moderation.md`) |
-| 6. Applications and project proposals | next |
+| 6. Applications and project proposals | done (see `docs/phase6-api-applications-proposals.md`) |
+| 7. AI matching | next |
 
 ## Run with Docker
 

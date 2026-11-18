@@ -10,6 +10,7 @@ ignore = ["S101"]
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S105", "S106"]
 "conftest.py" = ["S105", "S106"]
+"**/conftest.py" = ["F811"]  # fixtures imported from other conftests are redefined as arguments
 "config/settings/*" = ["F403", "F405"]
 
 [tool.pytest.ini_options]
