@@ -15,6 +15,7 @@ api_v1 = [
     path("resumes/", include("apps.resumes.urls")),
     path("jobs/", include("apps.jobs.urls")),
     path("", include("apps.applications.urls")),
+    path("matching/", include("apps.matching.urls")),
     path("admin/", include((moderation_urls.admin_urlpatterns, "admin-moderation"))),
     path("", include("apps.skills.urls")),
     path("admin/", include((skills_urls.admin_urlpatterns, "admin-api"))),

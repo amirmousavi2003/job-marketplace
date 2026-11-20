@@ -50,6 +50,42 @@ services:
       retries: 10
       start_period: 15s
 
+  # Optional background services. Start with:  docker compose --profile async up -d
+  # (also set CELERY_TASK_ALWAYS_EAGER=False in .env so web hands tasks to the worker)
+  worker:
+    profiles: ["async"]
+    build:
+      context: .
+      args:
+        INSTALL_DEV: "true"
+    env_file: .env
+    environment:
+      CELERY_TASK_ALWAYS_EAGER: "False"
+    command: celery -A config worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  beat:
+    profiles: ["async"]
+    build:
+      context: .
+      args:
+        INSTALL_DEV: "true"
+    env_file: .env
+    environment:
+      CELERY_TASK_ALWAYS_EAGER: "False"
+    command: celery -A config beat -l info
+    volumes:
+      - .:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+
 volumes:
   pg_data:
   redis_data:

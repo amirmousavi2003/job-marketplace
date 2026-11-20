@@ -13,7 +13,8 @@ Architecture and decisions: `docs/phase1-architecture-blueprint.md`.
 | 4. Resume, skills taxonomy, locations | done (see `docs/phase4-api-resume-taxonomy.md`) |
 | 5. Job marketplace (posts, search, moderation) | done (see `docs/phase5-api-jobs-moderation.md`) |
 | 6. Applications and project proposals | done (see `docs/phase6-api-applications-proposals.md`) |
-| 7. AI matching | next |
+| 7. AI matching | done (see `docs/phase7-ai-matching.md`) |
+| 8. Final QA, security review, docs | next |
 
 ## Run with Docker
 
@@ -52,9 +53,15 @@ docker compose exec web python manage.py seed_demo_catalogue
 Needs PostgreSQL with the `pg_trgm` extension (included in the official image; the DB user
 must be allowed to create extensions, which the Docker setup allows).
 
+## AI matching
+
+Works out of the box with a free offline engine (`AI_EMBEDDING_PROVIDER=local_ngram`). It measures text
+overlap, not meaning. See `docs/phase7-ai-matching.md` for what it can and cannot do, and how to connect a
+real embeddings service later.
+
 ## Expired posts
 
-Schedule `python manage.py expire_jobs` daily (cron or Celery beat). Expired posts are hidden from
+Run `docker compose --profile async up -d` (Celery beat does it daily), or schedule `python manage.py expire_jobs` yourself. Expired posts are hidden from
 search immediately even without it; the command only updates their stored status.
 
 ## Tests and lint

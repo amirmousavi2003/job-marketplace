@@ -75,7 +75,16 @@ def approve(post: JobPost, *, reviewer, note: str = "") -> JobPost:
         expires_at=now + timedelta(days=post.duration_days),
         moderation_note=note,
     )
+    transaction.on_commit(lambda: _queue_embedding(post.pk))
     return post
+
+
+def _queue_embedding(post_id: int) -> None:
+    """A newly public post gets its text vector prepared in the background (no-op when no AI
+    provider is configured). Imported here so moderation does not depend on matching at load."""
+    from apps.matching.tasks import embed_post
+
+    embed_post.delay(post_id)
 
 
 @transaction.atomic

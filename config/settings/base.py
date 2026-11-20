@@ -4,6 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -41,6 +42,7 @@ LOCAL_APPS = [
     "apps.jobs",
     "apps.moderation",
     "apps.applications",
+    "apps.matching",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -148,6 +150,7 @@ REST_FRAMEWORK = {
         "suggestions": "20/hour",
         "job_create": "30/hour",
         "apply": "60/hour",
+        "matching_recompute": "20/hour",
     },
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
 }
@@ -189,6 +192,41 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL or "memory://")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=REDIS_URL or "cache+memory://")
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    "expire-overdue-job-posts": {
+        "task": "apps.jobs.tasks.expire_overdue_posts",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
+
+# ---- AI matching -----------------------------------------------------------------------
+# AI_EMBEDDING_PROVIDER: "local_ngram" (default: offline, no key, lexical similarity),
+# "openai_compatible" (any service with an OpenAI-style /embeddings API) or "none".
+AI_EMBEDDING_PROVIDER = env("AI_EMBEDDING_PROVIDER", default="local_ngram")
+AI_EMBEDDING_API_URL = env("AI_EMBEDDING_API_URL", default="")  # e.g. https://host/v1
+AI_EMBEDDING_API_KEY = env("AI_EMBEDDING_API_KEY", default="")
+AI_EMBEDDING_MODEL = env("AI_EMBEDDING_MODEL", default="")
+AI_EMBEDDING_TIMEOUT_SECONDS = env.int("AI_EMBEDDING_TIMEOUT_SECONDS", default=20)
+AI_EMBEDDING_BATCH_SIZE = env.int("AI_EMBEDDING_BATCH_SIZE", default=16)
+
+MATCHING = {
+    "MAX_CANDIDATES": 200,  # posts scored per recommendation request
+    "HARD_CONSTRAINT_CAP": 40,  # a hard-constraint violation caps the score here (never rejects)
+    # relative weights of structured factors; factors that do not apply are left out
+    "WEIGHTS": {
+        "skills": 0.40,
+        "title": 0.15,
+        "experience": 0.10,
+        "education": 0.05,
+        "work_mode": 0.10,
+        "location": 0.10,
+        "salary": 0.10,
+    },
+    # share of the final score given to text similarity, by provider kind
+    "SEMANTIC_WEIGHT": {"lexical": 0.20, "neural": 0.35},
+    # cosine values mapped to 0..1 (below low = 0, above high = 1)
+    "SEMANTIC_RANGE": {"lexical": (0.15, 0.55), "neural": (0.30, 0.85)},
+}
 
 LOGGING = {
     "version": 1,
