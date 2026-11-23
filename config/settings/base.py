@@ -43,6 +43,7 @@ LOCAL_APPS = [
     "apps.moderation",
     "apps.applications",
     "apps.matching",
+    "apps.privacy",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -50,6 +51,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.common.middleware.RequestSizeLimitMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -104,6 +106,14 @@ else:
 PASSWORD_RESET_TIMEOUT = env.int("PASSWORD_RESET_TIMEOUT_SECONDS", default=3600)
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@jobmarket.local")
+# SMTP server for password-reset emails (used by the production settings).
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=15)
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -126,6 +136,15 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Largest accepted request bodies (bytes): JSON, and multipart uploads (profile photo is 2 MB).
+MAX_JSON_BODY_BYTES = 1_000_000
+MAX_UPLOAD_BODY_BYTES = 3_000_000
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_JSON_BODY_BYTES
+# Interactive API docs (Swagger) are for development. In production they are off unless enabled.
+ENABLE_API_DOCS = env.bool("DJANGO_ENABLE_API_DOCS", default=DEBUG)
+# Move the Django admin away from the guessable default in production, e.g. "manage-7f3k/".
+ADMIN_URL = env("DJANGO_ADMIN_URL", default="admin/")
+
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 REST_FRAMEWORK = {
@@ -142,8 +161,17 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
-    "DEFAULT_THROTTLE_CLASSES": ("rest_framework.throttling.ScopedRateThrottle",),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ),
+    # Behind a reverse proxy set DJANGO_NUM_PROXIES (usually 1) so clients are told apart by their
+    # real IP. 0 = trust only the socket address (cannot be spoofed with X-Forwarded-For).
+    "NUM_PROXIES": env.int("DJANGO_NUM_PROXIES", default=0),
     "DEFAULT_THROTTLE_RATES": {
+        "anon": "200/min",
+        "user": "600/min",
         "auth_login": "10/min",
         "auth_register": "5/min",
         "auth_password_reset": "5/hour",
@@ -151,6 +179,7 @@ REST_FRAMEWORK = {
         "job_create": "30/hour",
         "apply": "60/hour",
         "matching_recompute": "20/hour",
+        "account_erase": "5/hour",
     },
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
 }
@@ -168,7 +197,11 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Employment and freelance project marketplace for Iran.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": r"/api/v1",  # groups operations into tags: auth, jobs, resumes, ...
+    "SCHEMA_PATH_PREFIX_TRIM": False,
+    "SECURITY": [{"jwtAuth": []}],
     "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": False,
     # Stable, readable names for enums in the generated schema / frontend clients.
     "ENUM_NAME_OVERRIDES": {
         "ExperienceLevelEnum": "apps.common.choices.ExperienceLevel.choices",

@@ -6,7 +6,8 @@ from django.core.mail import send_mail
 from .services import make_reset_credentials
 
 
-@shared_task
+# SMTPException is an OSError: a mail server that is briefly down is retried a few times.
+@shared_task(autoretry_for=(OSError,), retry_backoff=60, retry_backoff_max=900, max_retries=3)
 def send_password_reset_email(user_id: int) -> None:
     user = get_user_model().objects.filter(pk=user_id, is_active=True).first()
     if user is None:

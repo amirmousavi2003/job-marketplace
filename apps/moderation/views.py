@@ -33,6 +33,9 @@ class AdminJobListView(ListAPIView):
 
 
 class AdminJobDetailView(RetrieveAPIView):
+    """Staff only. A post with everything a reviewer needs: the content, the employer's details
+    and posting record, and the full moderation history."""
+
     serializer_class = sz.AdminJobPostSerializer
     permission_classes = [IsAdminUser]
 
@@ -56,6 +59,9 @@ class _ReviewView(GenericAPIView):
 
 
 class AdminJobApproveView(_ReviewView):
+    """Staff only. Publish a post that is pending review. Sets the publication and expiry
+    dates. Optional note."""
+
     serializer_class = sz.JobApproveSerializer
 
     def review(self, post, reviewer, data):
@@ -63,6 +69,9 @@ class AdminJobApproveView(_ReviewView):
 
 
 class AdminJobRejectView(_ReviewView):
+    """Staff only. Reject a post that is pending review. A reason is required and is shown to
+    the employer."""
+
     serializer_class = sz.JobRejectSerializer
 
     def review(self, post, reviewer, data):
@@ -70,6 +79,9 @@ class AdminJobRejectView(_ReviewView):
 
 
 class AdminModerationHistoryView(ListAPIView):
+    """Staff only. Every moderation state change of a post, oldest first, with the acting staff
+    member."""
+
     serializer_class = sz.ModerationHistorySerializer
     permission_classes = [IsAdminUser]
     pagination_class = None

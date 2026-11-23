@@ -7,12 +7,14 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.applications.models import Application
 from apps.jobs import selectors as job_selectors
+from apps.jobs.models import JobPostSkill
 from apps.resumes.selectors import resume_queryset
 
 from . import embeddings, features, scoring
@@ -72,7 +74,9 @@ def _semantic_for(provider, resume_text: str, post_texts: dict[int, str]):
     sims = {}
     for pid, h in hashes.items():
         sims[pid] = (
-            embeddings.cosine(resume_vector, vectors[h]) if resume_vector and h in vectors else None
+            embeddings.similarity(resume_vector, vectors[h])
+            if resume_vector and h in vectors
+            else None
         )
     return sims, resume_hash, hashes, not ready
 
@@ -158,16 +162,43 @@ def _own_resume(profile):
     return resume
 
 
+MIN_POOL = 50  # below this many relevant posts, the newest other posts fill the pool
+
+
+def candidate_posts(profile, resume_f, post_type=None) -> list:
+    """Which public posts to score. Scoring every post does not scale, and "the newest N" would
+    hide older posts that fit the person well. So: posts that share a skill with the resume or
+    whose title contains one of the desired titles come first (newest first), and the newest
+    remaining posts top the pool up to MIN_POOL so small sites still show everything."""
+    limit = settings.MATCHING["MAX_CANDIDATES"]
+    base = job_selectors.visible_posts().exclude(employer__user_id=profile.user_id)
+    if post_type:
+        base = base.filter(post_type=post_type)
+    relevance = Q(pk__in=[])  # matches nothing
+    skill_ids = [sid for sid, _, _ in resume_f.skills]
+    if skill_ids:
+        relevance |= Q(
+            pk__in=JobPostSkill.objects.filter(skill_id__in=skill_ids).values("job_post_id")
+        )
+    for term in resume_f.title_terms:
+        if term:
+            relevance |= Q(title_normalized__contains=term)
+    relevant = list(base.filter(relevance).order_by("-published_at", "-id")[:limit])
+    pool = min(limit, MIN_POOL)
+    if len(relevant) >= pool:
+        return relevant
+    seen = {p.pk for p in relevant}
+    filler = base.exclude(pk__in=seen).order_by("-published_at", "-id")[: pool - len(relevant)]
+    return relevant + list(filler)
+
+
 @transaction.atomic
 def refresh_matches_for_seeker(profile, post_type: str | None = None) -> list[PostMatch]:
-    """Score the seeker's resume against the newest public posts and store the results.
+    """Score the seeker's resume against the most relevant public posts and store the results.
     Never touches applications or anyone's status."""
     provider = get_provider()
     resume_f = features.resume_features(_own_resume(profile))
-    posts = job_selectors.visible_posts().exclude(employer__user_id=profile.user_id)
-    if post_type:
-        posts = posts.filter(post_type=post_type)
-    posts = list(posts.order_by("-published_at", "-id")[: settings.MATCHING["MAX_CANDIDATES"]])
+    posts = candidate_posts(profile, resume_f, post_type)
     matches, hashes = _score_posts(provider, resume_f, posts)
     _persist(profile, provider, matches, hashes)
     return sorted(matches, key=lambda m: (-m.result.score, -m.post.pk))
@@ -204,7 +235,7 @@ def rank_applicants(post) -> list[dict]:
         for app_id, f in snapshots.items():
             h = embeddings.text_hash(f.text())
             if post_hash in vectors and h in vectors:
-                sims[app_id] = embeddings.cosine(vectors[h], vectors[post_hash])
+                sims[app_id] = embeddings.similarity(vectors[h], vectors[post_hash])
     rows = []
     for application in applications:
         result = scoring.score_pair(

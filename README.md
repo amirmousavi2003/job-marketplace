@@ -1,89 +1,102 @@
 # Job Marketplace Backend
 
-Django + DRF + PostgreSQL backend for an Iranian employment and freelance project marketplace.
-Architecture and decisions: `docs/phase1-architecture-blueprint.md`.
+Backend of an employment and freelance-project marketplace for Iran. Django 5.2 + Django REST Framework +
+PostgreSQL + Redis + Celery. Persian is first-class (search, validation, messages). The React frontend is a
+separate project; this repository only provides the API.
 
-## Status
+- Job seekers build a resume, apply to jobs and send proposals for projects.
+- Employers (individuals or companies) post jobs and projects; **an admin approves every post** before it is public.
+- Search and filters, explainable AI-assisted recommendations, full status history, privacy by design.
 
-| Phase | Status |
-|---|---|
-| 1. Blueprint | done |
-| 2. Foundation (settings, custom User, Docker, tests) | done |
-| 3. Auth, profiles, companies | done (see `docs/phase3-api-auth-profiles-companies.md`) |
-| 4. Resume, skills taxonomy, locations | done (see `docs/phase4-api-resume-taxonomy.md`) |
-| 5. Job marketplace (posts, search, moderation) | done (see `docs/phase5-api-jobs-moderation.md`) |
-| 6. Applications and project proposals | done (see `docs/phase6-api-applications-proposals.md`) |
-| 7. AI matching | done (see `docs/phase7-ai-matching.md`) |
-| 8. Final QA, security review, docs | next |
+Status: **all 8 phases done.** See `docs/COMPLETION_REPORT.md` for what was verified and what was not.
 
-## Run with Docker
+## Run it (Docker)
 
 ```bash
-cp .env.example .env        # then edit POSTGRES_PASSWORD and DJANGO_SECRET_KEY
-docker compose up --build
-```
-
-- API health: http://localhost:8000/api/v1/health/
-- Swagger UI: http://localhost:8000/api/docs/
-- Admin: http://localhost:8000/admin/ (create a superuser first)
-
-```bash
+cp .env.example .env          # Windows PowerShell: copy .env.example .env
+# edit .env: set POSTGRES_PASSWORD and DJANGO_SECRET_KEY
+docker compose up -d --build
 docker compose exec web python manage.py createsuperuser
-docker compose exec web pytest
+docker compose exec web python manage.py seed_demo_catalogue     # optional demo skills and job titles
+docker compose exec web pytest                                   # all tests
 ```
 
-## Run without Docker
+| What | Where |
+|---|---|
+| API health | http://localhost:8000/api/v1/health/ |
+| Interactive API docs (development only) | http://localhost:8000/api/docs/ |
+| Django admin | http://localhost:8000/admin/ |
+| API contract for the frontend developer | `docs/api/openapi.yaml` |
 
-Needs Python 3.12+ and a PostgreSQL server.
+Optional background services (real Celery worker + nightly expiry job):
+`docker compose --profile async up -d`, and set `CELERY_TASK_ALWAYS_EAGER=False` in `.env`.
+Stop with `docker compose down` (data is kept in volumes; `down -v` would erase it).
+
+## Run it without Docker
+
+Needs Python 3.12+, PostgreSQL 16 and (for production-like runs) Redis.
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements/dev.txt
-cp .env.example .env        # set POSTGRES_HOST=localhost
+cp .env.example .env     # set POSTGRES_HOST=localhost and the database credentials
 python manage.py migrate
 python manage.py runserver
 ```
 
-## Demo catalogue
+## Tests and quality
 
 ```bash
-docker compose exec web python manage.py seed_demo_catalogue
+pytest                                  # 759 tests (real PostgreSQL required)
+ruff check . && ruff format --check .   # lint and format
+python manage.py check --deploy         # with config.settings.prod
 ```
 
-Needs PostgreSQL with the `pg_trgm` extension (included in the official image; the DB user
-must be allowed to create extensions, which the Docker setup allows).
+Tests use `config.settings.test` automatically. Two "contract" tests fail if `docs/api/openapi.yaml` or
+`docs/erd.md` is out of date; they print the exact command to regenerate them.
+
+## Project layout
+
+```
+config/            settings (base, dev, test, prod), urls, celery
+apps/              accounts, privacy, profiles, companies, locations, skills, resumes,
+                   jobs, moderation, applications, matching, common
+docs/              guides (see below), api/openapi.yaml, erd.md
+requirements/      base.txt, dev.txt
+```
+
+## Configuration
+
+All settings come from environment variables; `.env.example` lists them with comments. The important ones:
+`DJANGO_SECRET_KEY`, `POSTGRES_*`, `REDIS_URL`, `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL`, `AI_EMBEDDING_PROVIDER`.
+Production-only settings and the checklist are in `docs/deployment.md`.
 
 ## AI matching
 
-Works out of the box with a free offline engine (`AI_EMBEDDING_PROVIDER=local_ngram`). It measures text
-overlap, not meaning. See `docs/phase7-ai-matching.md` for what it can and cannot do, and how to connect a
-real embeddings service later.
+Works out of the box with a free offline engine (`AI_EMBEDDING_PROVIDER=local_ngram`) that measures **text
+overlap, not meaning**. It is assistive only and labeled honestly in every response. A real embeddings service
+can be connected later with three environment variables. See `docs/phase7-ai-matching.md`.
 
-## Expired posts
+## Useful commands
 
-Run `docker compose --profile async up -d` (Celery beat does it daily), or schedule `python manage.py expire_jobs` yourself. Expired posts are hidden from
-search immediately even without it; the command only updates their stored status.
+| Command | Purpose |
+|---|---|
+| `seed_demo_catalogue` | demo skills and job titles (idempotent) |
+| `expire_jobs` | mark expired posts (beat runs it nightly) |
+| `compute_embeddings` | prepare text vectors for public posts |
+| `generate_erd > docs/erd.md` | regenerate the database documentation |
+| `spectacular --validate --fail-on-warn --file docs/api/openapi.yaml` | regenerate the API contract |
 
-## Tests and lint
+## Documentation
 
-```bash
-pytest
-ruff check . && ruff format --check .
-```
-
-Tests use `config.settings.test` and need PostgreSQL (the DB user must be able to create a test database).
-
-## Settings
-
-- `config/settings/base.py`: shared. Secrets only from environment variables.
-- `dev.py`, `test.py`, `prod.py`: per environment. `prod.py` enables HTTPS-only cookies, HSTS and SSL redirect.
-- `manage.py` defaults to `dev`; `wsgi.py` / `asgi.py` default to `prod`.
-
-## Conventions
-
-- Error format for every API error: `{"error": {"code", "message", "details"}}`.
-- Pagination: `?page=&page_size=` (max 50) returns `{count, next, previous, results}`.
-- Dev runs Celery tasks inline (`CELERY_TASK_ALWAYS_EAGER=True` in `dev.py`), so password-reset emails
-  are printed in the web container log. Production needs a real worker and SMTP.
-- Emails are stored lowercase; login identifier is the email.
-- Money is stored as integers (Rial). Dates are ISO 8601 Gregorian; the frontend converts to Jalali.
+| File | For |
+|---|---|
+| `docs/frontend-integration.md` | the React developer: auth, errors, pagination, flows, enum values |
+| `docs/api/openapi.yaml` | machine-readable API (116 operations) |
+| `docs/phase3-...` to `docs/phase7-...` | endpoint-by-endpoint rules and examples per feature area |
+| `docs/architecture.md` | how the system is built and why |
+| `docs/erd.md` | generated database design, deletion rules, constraints |
+| `docs/security.md` | controls, how they were verified, known limitations |
+| `docs/deployment.md` | production checklist, nginx example, operations |
+| `docs/COMPLETION_REPORT.md` | final report: results, findings, risks, next steps |
+| `docs/phase1-architecture-blueprint.md` | the original plan (historical; the architecture file wins) |

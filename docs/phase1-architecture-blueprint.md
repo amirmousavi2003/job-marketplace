@@ -1,4 +1,7 @@
 # Phase 1 — Technical Blueprint
+
+> **HISTORICAL.** This is the original plan. The system was built as described in
+> `architecture.md`, which lists every difference. Use that file and `erd.md` as the truth.
 Job Marketplace Backend (Iran)
 
 Status: PROPOSAL — awaiting approval. No code written.

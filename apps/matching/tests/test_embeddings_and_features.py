@@ -147,3 +147,16 @@ def test_provider_none_object_is_what_a_broken_config_gives(settings):
     settings.AI_EMBEDDING_PROVIDER = "openai_compatible"
     settings.AI_EMBEDDING_API_URL = ""
     assert isinstance(get_provider(), NoneProvider)
+
+
+def test_stored_vectors_have_unit_length_whatever_the_provider_returns(fake_neural):
+    class Raw(type(fake_neural)):
+        def embed(self, texts):
+            return [[3.0, 4.0, 0.0] for _ in texts]
+
+    provider = Raw()
+    embeddings.ensure_embeddings(provider, ["any text"])
+    stored = EmbeddingCache.objects.get().vector
+    assert stored == pytest.approx([0.6, 0.8, 0.0])
+    assert embeddings.similarity(stored, stored) == pytest.approx(1.0)
+    assert embeddings.normalize_vector([0.0, 0.0]) == [0.0, 0.0]  # zero vector stays zero, no crash

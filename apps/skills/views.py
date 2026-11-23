@@ -125,6 +125,9 @@ class _AdminSuggestionActionView(GenericAPIView):
 
 
 class _ApproveView(_AdminSuggestionActionView):
+    """Staff only. Approve a pending suggestion: create a new catalogue entry from it, or
+    attach it as an alias of an existing entry (existing_id)."""
+
     serializer_class = sz.SuggestionApproveSerializer
 
     def post(self, request, pk):
@@ -151,6 +154,8 @@ class _ApproveView(_AdminSuggestionActionView):
 
 
 class _RejectView(_AdminSuggestionActionView):
+    """Staff only. Reject a pending suggestion. A reason is required."""
+
     serializer_class = sz.SuggestionRejectSerializer
 
     def post(self, request, pk):

@@ -15,6 +15,9 @@ User = get_user_model()
 
 
 class RegisterView(CreateAPIView):
+    """Create an account (email + password, optional Iranian mobile number). Returns the new
+    account without any token: log in next."""
+
     serializer_class = serializers.RegisterSerializer
     permission_classes = [AllowAny]
     authentication_classes: list = []
@@ -44,6 +47,9 @@ class LogoutView(GenericAPIView):
 
 
 class PasswordChangeView(GenericAPIView):
+    """Change the password. All refresh tokens of the account are revoked, so every device must
+    log in again."""
+
     serializer_class = serializers.PasswordChangeSerializer
     permission_classes = [IsAuthenticated]
 
@@ -73,6 +79,9 @@ class PasswordResetRequestView(GenericAPIView):
 
 
 class PasswordResetConfirmView(GenericAPIView):
+    """Set a new password with the uid and token from the reset email (valid for one hour,
+    single use). Revokes all refresh tokens."""
+
     serializer_class = serializers.PasswordResetConfirmSerializer
     permission_classes = [AllowAny]
     authentication_classes: list = []
@@ -88,6 +97,9 @@ class PasswordResetConfirmView(GenericAPIView):
 
 
 class MeView(RetrieveUpdateAPIView):
+    """The logged-in account: email, phone, join date and roles (job seeker / employer /
+    admin). Only the phone number can be edited."""
+
     serializer_class = serializers.MeSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ["get", "patch", "head", "options"]
@@ -97,6 +109,9 @@ class MeView(RetrieveUpdateAPIView):
 
 
 class DeactivateAccountView(GenericAPIView):
+    """Deactivate the account (password required). Login becomes impossible and all tokens are
+    revoked. For permanent deletion use the erase endpoint."""
+
     serializer_class = serializers.DeactivateSerializer
     permission_classes = [IsAuthenticated]
 

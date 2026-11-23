@@ -262,3 +262,24 @@ def test_login_is_rate_limited(api_client, make_user, monkeypatch):
     assert codes[:3] == [401, 401, 401]
     assert codes[3:] == [429, 429]
     cache.clear()
+
+
+def test_smtp_is_configurable_from_the_environment(settings):
+    for name in (
+        "EMAIL_HOST",
+        "EMAIL_PORT",
+        "EMAIL_HOST_USER",
+        "EMAIL_HOST_PASSWORD",
+        "EMAIL_USE_TLS",
+        "EMAIL_TIMEOUT",
+    ):
+        assert hasattr(settings, name), (
+            name
+        )  # production needs a real SMTP server to send reset links
+
+
+def test_reset_email_task_is_retried_when_the_mail_server_is_down():
+    from apps.accounts.tasks import send_password_reset_email
+
+    assert OSError in send_password_reset_email.autoretry_for
+    assert send_password_reset_email.max_retries == 3

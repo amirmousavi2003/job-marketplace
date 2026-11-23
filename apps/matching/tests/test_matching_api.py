@@ -426,3 +426,59 @@ def test_recommendations_query_count_is_bounded(
     with django_assert_max_num_queries(18):
         r = client.get(REC, {"page_size": 50})
     assert r.json()["count"] == 32
+
+
+# ------------------------------------------------------------------ candidate selection (scale)
+def _age(post, days):
+    import datetime
+
+    from django.utils import timezone
+
+    JobPost.objects.filter(pk=post.pk).update(
+        published_at=timezone.now() - datetime.timedelta(days=days)
+    )
+
+
+def test_older_relevant_posts_are_not_crowded_out_by_newer_irrelevant_ones(
+    world, make_post, auth_client, settings
+):
+    settings.MATCHING = {**settings.MATCHING, "MAX_CANDIDATES": 20}
+    relevant = [make_post(published=True, skills=[world["django"]]) for _ in range(3)]
+    for post in relevant:
+        _age(post, 200)  # far older than everything else
+    for _ in range(40):
+        make_post(published=True)  # newer, unrelated (no matching skill)
+    ids = {r["post"]["id"] for r in rows(auth_client(world["seeker"]), page_size=50)}
+    assert {p.pk for p in relevant} <= ids and world["good"].pk in ids
+    assert len(ids) == 20  # bounded work
+
+
+def test_when_relevant_posts_fill_the_pool_unrelated_ones_are_left_out(
+    world, make_post, auth_client, settings
+):
+    settings.MATCHING = {**settings.MATCHING, "MAX_CANDIDATES": 5}
+    relevant = [make_post(published=True, skills=[world["django"]]) for _ in range(8)]
+    unrelated = [make_post(published=True) for _ in range(5)]
+    ids = {r["post"]["id"] for r in rows(auth_client(world["seeker"]), page_size=50)}
+    assert len(ids) == 5 and ids <= {p.pk for p in relevant} | {world["good"].pk}
+    assert not ids & {p.pk for p in unrelated}
+
+
+def test_title_match_alone_makes_a_post_relevant(
+    make_matching_seeker, make_title, make_post, auth_client, settings
+):
+    settings.MATCHING = {**settings.MATCHING, "MAX_CANDIDATES": 4}
+    seeker = make_matching_seeker(titles=[make_title("Accountant", "حسابدار")])
+    wanted = make_post(published=True, title="حسابدار ارشد")
+    _age(wanted, 100)
+    for _ in range(10):
+        make_post(published=True)
+    assert wanted.pk in {r["post"]["id"] for r in rows(auth_client(seeker), page_size=50)}
+
+
+def test_small_sites_still_show_every_public_post(world, make_post, auth_client):
+    for _ in range(10):
+        make_post(published=True)
+    assert (
+        len(rows(auth_client(world["seeker"]), page_size=50)) == 12
+    )  # nothing hidden below the pool size

@@ -33,6 +33,9 @@ class _CompanyScopedMixin:
 
 
 class CompanyListCreateView(_CompanyScopedMixin, ListCreateAPIView):
+    """GET: companies the employer belongs to. POST: create a company; the creator becomes its
+    owner. Needs an employer profile."""
+
     serializer_class = CompanySerializer
 
     def get_queryset(self):
@@ -49,6 +52,9 @@ class CompanyListCreateView(_CompanyScopedMixin, ListCreateAPIView):
 
 
 class CompanyDetailView(_CompanyScopedMixin, RetrieveUpdateDestroyAPIView):
+    """A company of the employer. Members can read; only the owner can edit (PATCH) or close it
+    (DELETE deactivates it)."""
+
     serializer_class = CompanySerializer
     permission_classes = [IsEmployer, IsCompanyOwnerOrReadOnly]
     http_method_names = ["get", "patch", "delete", "head", "options"]
@@ -68,6 +74,9 @@ class _MembersBase(_CompanyScopedMixin):
 
 
 class CompanyMembersView(_MembersBase, GenericAPIView):
+    """GET: members of the company (any member). POST: add an existing employer account by
+    email (owner only)."""
+
     serializer_class = MembershipSerializer
 
     def get(self, request, company_id):
@@ -88,6 +97,8 @@ class CompanyMembersView(_MembersBase, GenericAPIView):
 
 
 class CompanyMemberDetailView(_MembersBase, GenericAPIView):
+    """Remove a member (owner), or leave the company yourself. The owner cannot be removed."""
+
     serializer_class = MembershipSerializer
     http_method_names = ["delete", "options"]
 
