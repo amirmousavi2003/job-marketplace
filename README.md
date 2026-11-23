@@ -8,7 +8,7 @@ separate project; this repository only provides the API.
 - Employers (individuals or companies) post jobs and projects; **an admin approves every post** before it is public.
 - Search and filters, explainable AI-assisted recommendations, full status history, privacy by design.
 
-Status: **all 8 phases done.** See `docs/COMPLETION_REPORT.md` for what was verified and what was not.
+
 
 ## Run it (Docker)
 
